@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Teknoloji-Ahlak Kod Bulmacası</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff; padding: 20px; }
+    .container { max-width: 900px; margin: auto; text-align: center; }
+    h1 { font-size: 2rem; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+    .subtitle { font-size: 1rem; margin-bottom: 20px; opacity: 0.9; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+    .cell { background: rgba(255,255,255,0.15); border-radius: 15px; padding: 15px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .cell:hover { transform: translateY(-5px); background: rgba(255,255,255,0.25); }
+    .cell.solved { background: #28a745; pointer-events: none; }
+    .cell .question { font-weight: bold; margin-bottom: 10px; }
+    .options { display: none; margin-top: 10px; }
+    .options button { margin: 5px; padding: 8px 12px; background: #e69138; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    .options button.correct { background: #28a745; }
+    .options button.wrong { background: #dc3545; }
+    .message { margin-top: 30px; font-size: 1.8rem; font-weight: bold; opacity: 0; transition: opacity 1s; }
+    .message.show { opacity: 1; }
+    .score { font-size: 1.2rem; margin-top: 15px; }
+    .restart { margin-top: 20px; padding: 12px 24px; background: #ffc107; color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 TEKNOLOJİ-AHLAK KOD BULMACASI</h1>
+    <p class="subtitle">Her soruyu çöz, harf kazan! Gizli mesajı bul! 🚀</p>
+    
+    <div class="grid" id="grid"></div>
+    
+    <div class="message" id="message"></div>
+    <div class="score" id="score">Puan: 0 / 90</div>
+    <button class="restart" id="restart" style="display:none;">🔄 Yeniden Başla</button>
+  </div>
+
+  <script>
+    const questions = [
+      // 0: T
+      { q: "Sosyal medyada birisinin izinsiz fotoğrafı paylaşılıyor. Hangi ilke ihlal edildi?", 
+        opts: ["Adalet", "Mahremiyet", "Eşitlik"], ans: 1, letter: "T" },
+      // 1: E
+      { q: "Yapay zekâ işe alım uygulaması algoritması ırklara göre ayrım yapıyor. Hangi ilke gerekli?", 
+        opts: ["Mahremiyet", "Adalet", "Fıtrat"], ans: 1, letter: "E" },
+      // 2: K
+      { q: "Genetik mühendisliği sayesinde sipariş bebek tasarımı yapılıyor. Hangi ilkeye müdahale?", 
+        opts: ["Emanet", "Fıtrat", "Okuryazarlık"], ans: 1, letter: "K" },
+      // 3: N
+      { q: "Kullanıcı verileri izinsiz satılıyor. Hangi ilke göz ardı ediliyor?", 
+        opts: ["Adalet", "Emanet", "Eşitlik"], ans: 1, letter: "N" },
+      // 4: O
+      { q: "Siber zorbalık yapan biri 'Şaka yapmıştım.' diyor. Hangi ilke hafife alındı?", 
+        opts: ["Mahremiyet", "İnsan Onuru", "Eşitlik"], ans: 1, letter: "O" },
+      // 5: L
+      { q: "Kullanıcı, veri paylaşımını kontrol edemiyor. Hangi beceri eksik?", 
+        opts: ["Programlama", "Dijital Okuryazarlık", "Tasarım"], ans: 1, letter: "L" },
+      // 6: O
+      { q: "Otonom araç, can alma kararı veriyor. Hangi ilke tehlikede?", 
+        opts: ["Emanet", "İnsan Onuru", "Verimlilik"], ans: 1, letter: "O" },
+      // 7: J
+      { q: "Şirket, maksimum kârlılık için etik kurulu atlıyor. Hangi ilke yok sayılıyor?", 
+        opts: ["Denetim", "Sorumluluk", "Rekabet"], ans: 1, letter: "J" },
+      // 8: İ
+      { q: "Teknoloji, ilkeler doğrultusunda kullanılmadığında ne olur?", 
+        opts: ["Gelişim", "Felaket", "Gerileme"], ans: 1, letter: "İ" }
+    ];
+
+    const targetMessage = 
+	"Teknoloji insanın elindeki güçlü bir araçtır; yönünü belirleyen ise onun ahlaki bilincidir.";
+    let solved = [];
+    let score = 0;
+
+    const grid = document.getElementById('grid');
+    const messageEl = document.getElementById('message');
+    const scoreEl = document.getElementById('score');
+    const restartBtn = document.getElementById('restart');
+
+    function init() {
+      solved = Array(9).fill(false);
+      score = 0;
+      scoreEl.textContent = "Puan: 0 / 90";
+      messageEl.classList.remove('show');
+      messageEl.textContent = '';
+      restartBtn.style.display = 'none';
+      grid.innerHTML = '';
+      
+      questions.forEach((q, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.innerHTML = `
+          <div class="question">${q.q}</div>
+          <div class="options" id="opts-${i}"></div>
+        `;
+        cell.onclick = () => openQuestion(i);
+        grid.appendChild(cell);
+      });
+    }
+
+    function openQuestion(idx) {
+      if (solved[idx]) return;
+      const optsDiv = document.getElementById(`opts-${idx}`);
+      if (optsDiv.children.length > 0) return;
+
+      questions[idx].opts.forEach((opt, o) => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          checkAnswer(idx, o, btn);
+        };
+        optsDiv.appendChild(btn);
+      });
+      optsDiv.style.display = 'block';
+    }
+
+    function checkAnswer(idx, selected, btn) {
+      const q = questions[idx];
+      if (selected === q.ans) {
+        btn.classList.add('correct');
+        solved[idx] = true;
+        score += 10;
+        revealLetter(idx, q.letter);
+      } else {
+        btn.classList.add('wrong');
+      }
+      scoreEl.textContent = `Puan: ${score} / 90`;
+      checkWin();
+    }
+
+    function revealLetter(idx, letter) {
+      const cells = document.querySelectorAll('.cell');
+      cells[idx].classList.add('solved');
+      cells[idx].innerHTML = `<div style="font-size:2rem; font-weight:bold;">${letter}</div>`;
+    }
+
+    function checkWin() {
+      if (solved.every(s => s)) {
+        messageEl.textContent = `🎉 TEBRİKLER! MESAJINIZ: ${targetMessage}`;
+        messageEl.classList.add('show');
+        restartBtn.style.display = 'block';
+      }
+    }
+
+    restartBtn.onclick = init;
+    init();
+  </script>
+</body>
+</html>
